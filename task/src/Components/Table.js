@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Table, Input, Button, Space } from 'antd';
-import { SearchOutlined } from '@ant-design/icons';
+import { Table, Input, Button, Space, Checkbox } from 'antd';
+import { SearchOutlined, FilterOutlined } from '@ant-design/icons';
 
 const CombinedTable = () => {
   const [data, setData] = useState([]);
@@ -13,8 +13,9 @@ const CombinedTable = () => {
   });
   const [searchText, setSearchText] = useState('');
   const [searchedColumn, setSearchedColumn] = useState('');
-  const [showIdColumn, setShowIdColumn] = useState(true); 
+  const [showIdColumn, setShowIdColumn] = useState(true);
   const searchInput = useRef(null);
+  const [selectedKeys, setSelectedKeys] = useState([]);
 
   const handleToggleIdColumn = () => {
     setShowIdColumn(!showIdColumn);
@@ -76,83 +77,198 @@ const CombinedTable = () => {
     setSearchText('');
   };
 
-  const getColumnSearchProps = (dataIndex) => ({
-    filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters, close }) => (
-      <div
-        style={{
-          padding: 8,
-          width: 250,
-        }}
-        onKeyDown={(e) => e.stopPropagation()}
-      >
-        <Input
-          ref={searchInput}
-          placeholder={`Search ${dataIndex}`}
-          value={selectedKeys[0]}
-          onChange={(e) => setSelectedKeys(e.target.value ? [e.target.value] : [])}
-          onPressEnter={() => handleSearch(selectedKeys, confirm, dataIndex)}
-          style={{
-            marginBottom: 8,
-            display: 'block',
-          }}
-        />
-        <Space>
-          <Button
-            type="primary"
-            onClick={() => handleSearch(selectedKeys, confirm, dataIndex)}
-            icon={<SearchOutlined />}
-            size="small"
+  const getColumnSearchProps = (dataIndex) => {
+    if (dataIndex === 'name') {
+      return {
+        filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters, close }) => (
+          <div
             style={{
-              width: 90,
+              padding: 8,
+              width: 250,
             }}
+            onKeyDown={(e) => e.stopPropagation()}
           >
-            Search
-          </Button>
+            <Input
+              ref={searchInput}
+              placeholder={`Search ${dataIndex}`}
+              value={selectedKeys[0]}
+              onChange={(e) => setSelectedKeys(e.target.value ? [e.target.value] : [])}
+              onPressEnter={() => handleSearch(selectedKeys, confirm, dataIndex)}
+              style={{
+                marginBottom: 8,
+                display: 'block',
+              }}
+            />
+            <Space>
+              <Button
+                type="primary"
+                onClick={() => handleSearch(selectedKeys, confirm, dataIndex)}
+                icon={<SearchOutlined />}
+                size="small"
+                style={{
+                  width: 90,
+                }}
+              >
+                Search
+              </Button>
   
-          <Button
-            onClick={() => clearFilters && handleReset(clearFilters)}
-            size="small"
+              <Button
+                onClick={() => clearFilters && handleReset(clearFilters)}
+                size="small"
+                style={{
+                  width: 90,
+                }}
+              >
+                Reset
+              </Button>
+              <Button
+                type="link"
+                size="small"
+                onClick={() => {
+                  confirm({
+                    closeDropdown: false,
+                  });
+                  setSearchText(selectedKeys[0]);
+                  setSearchedColumn(dataIndex);
+                }}
+              >
+                Filter
+              </Button>
+              <Button
+                type="link"
+                size="small"
+                onClick={() => {
+                  close();
+                }}
+              >
+                Close
+              </Button>
+            </Space>
+          </div>
+        ),
+        filterIcon: (filtered) => (
+          <Space>
+            <SearchOutlined style={{ color: filtered ? '#1890ff' : undefined }} />
+          </Space>
+        ),
+        onFilterDropdownVisibleChange: (visible) => {
+          if (visible) {
+            setTimeout(() => searchInput.current?.select(), 100);
+          }
+        },
+      };
+    }
+  
+    return {
+      filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters, close }) => (
+        <div
+          style={{
+            padding: 8,
+            width: 250,
+          }}
+          onKeyDown={(e) => e.stopPropagation()}
+        >
+          <Input
+            ref={searchInput}
+            placeholder={`Search ${dataIndex}`}
+            value={selectedKeys[0]}
+            onChange={(e) => setSelectedKeys(e.target.value ? [e.target.value] : [])}
+            onPressEnter={() => handleSearch(selectedKeys, confirm, dataIndex)}
             style={{
-              width: 90,
+              marginBottom: 8,
+              display: 'block',
             }}
-          >
-            Reset
-          </Button>
-          <Button
-            type="link"
-            size="small"
-            onClick={() => {
-              close();
-            }}
-          >
-            Close
-          </Button>
+          />
+          <Checkbox.Group
+            options={[
+              { label: 'Male', value: 'male' },
+              { label: 'Female', value: 'female' },
+            ]}
+            value={selectedKeys}
+            onChange={(values) => setSelectedKeys(values)}
+          />
+          <Space>
+            <Button
+              type="primary"
+              onClick={() => handleSearch(selectedKeys, confirm, dataIndex)}
+              icon={<SearchOutlined />}
+              size="small"
+              style={{
+                width: 90,
+              }}
+            >
+              Search
+            </Button>
+  
+            <Button
+              onClick={() => clearFilters && handleReset(clearFilters)}
+              size="small"
+              style={{
+                width: 90,
+              }}
+            >
+              Reset
+            </Button>
+            <Button
+              type="link"
+              size="small"
+              onClick={() => {
+                confirm({
+                  closeDropdown: false,
+                });
+                setSearchText(selectedKeys[0]);
+                setSearchedColumn(dataIndex);
+              }}
+            >
+              Filter
+            </Button>
+            <Button
+              type="link"
+              size="small"
+              onClick={() => {
+                close();
+              }}
+            >
+              Close
+            </Button>
+          </Space>
+        </div>
+      ),
+      filterIcon: (filtered) => (
+        <Space>
+          <SearchOutlined style={{ color: filtered ? '#1890ff' : undefined }} />
+          <FilterOutlined style={{ color: selectedKeys.length > 0 ? '#1890ff' : undefined }} />
         </Space>
-      </div>
-    ),
-    filterIcon: (filtered) => <SearchOutlined style={{ color: filtered ? '#1890ff' : undefined }} />,
-    onFilter: (value, record) => {
-      const dataIndexValue = record[dataIndex];
-      const fullName = `${dataIndexValue.first} ${dataIndexValue.last}`.toLowerCase();
-      return fullName.includes(value.toLowerCase());
-    },
-    
-    onFilterDropdownVisibleChange: (visible) => {
-      if (visible) {
-        setTimeout(() => searchInput.current?.select(), 100);
-      }
-    },
-  });
-
+      ),
+      onFilter: (value, record) => {
+        const dataIndexValue = record[dataIndex];
+        if (dataIndex === 'id') {
+          return dataIndexValue.toString().toLowerCase().includes(value.toLowerCase());
+        }
+  
+        if (dataIndex === 'gender') {
+          return value.includes(dataIndexValue.toLowerCase());
+        }
+  
+        return false;
+      },
+      onFilterDropdownVisibleChange: (visible) => {
+        if (visible) {
+          setTimeout(() => searchInput.current?.select(), 100);
+        }
+      },
+    };
+  };
+  
   const handleSearchButton = () => {
-    const filteredData = data.filter(item => {
+    const filteredData = data.filter((item) => {
       const fullName = `${item.name.first} ${item.name.last}`.toLowerCase();
       return fullName.includes(searchText.toLowerCase());
     });
-  
+
     setData(filteredData);
   };
-  
+
   useEffect(() => {
     const hardcodedData = [
       {
@@ -313,14 +429,15 @@ const CombinedTable = () => {
     });
   }, []);
 
- 
   const columns = [
-    showIdColumn ? {
-      title: 'ID',
-      dataIndex: 'id',
-      sorter: (a, b) => a.id - b.id,
-      width: '10%',
-    } : null,
+    showIdColumn
+      ? {
+          title: 'ID',
+          dataIndex: 'id',
+          sorter: (a, b) => a.id - b.id,
+          width: '10%',
+        }
+      : null,
     {
       title: 'Name',
       dataIndex: 'name',
@@ -342,7 +459,7 @@ const CombinedTable = () => {
           value: 'female',
         },
       ],
-      width: '25%',
+      width: '20%',
       ...getColumnSearchProps('gender'),
       render: (gender) => gender,
       onFilter: (value, record) => record['gender'] === value,
@@ -364,30 +481,28 @@ const CombinedTable = () => {
         onPressEnter={() => handleSearchButton()}
         style={{
           marginBottom: 16,
-          marginTop:50,
+          marginTop: 50,
           marginRight: 8,
-          width:600,
+          width: 600,
         }}
       />
-      <Button
-        type="primary"
-        onClick={handleSearchButton}
-        
-      >
+      <Button type="primary" onClick={handleSearchButton}>
         Search
       </Button>
-      <Button onClick={handleToggleIdColumn} style={{marginLeft:10,}}>
-            {showIdColumn ? 'Hide ID Column' : 'Show ID Column'}
-          </Button>
+      <Button onClick={handleToggleIdColumn} style={{ marginLeft: 10 }}>
+        {showIdColumn ? 'Hide ID Column' : 'Show ID Column'}
+      </Button>
       <Table
         dataSource={data}
         columns={columns}
         loading={loading}
         onChange={handleTableChange}
         pagination={tableParams.pagination}
-        style={{width:800,
-        marginLeft:380,
-      marginTop:50,}}
+        style={{
+          width: 800,
+          marginLeft: 380,
+          marginTop: 50,
+        }}
       />
     </div>
   );
